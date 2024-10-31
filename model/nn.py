@@ -5,6 +5,8 @@ import torch
 from utils.util import make_anchors
 
 
+# set padding
+
 def pad(k, p=None, d=1):
     if d > 1:
         k = d * (k - 1) + 1
