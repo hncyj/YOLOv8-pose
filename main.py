@@ -13,6 +13,7 @@ from torch.utils import data
 from model import nn
 from utils import util
 from utils.dataset import Dataset
+from utils.dataset import FORMATS
 
 # warnings.filterwarnings("ignore")
 
@@ -57,13 +58,19 @@ def train(args, params):
     # EMA
     ema = util.EMA(model) if args.local_rank == 0 else None
 
-    filenames = []
-    with open('../Dataset/COCOPose/train2017.txt') as reader:
-        for filename in reader.readlines():
-            filename = filename.rstrip().split('/')[-1]
-            filenames.append('../Dataset/COCOPose/images/train2017/' + filename)
+    # filenames = []
+    # with open('../Dataset/COCOPose/train2017.txt') as reader:
+    #     for filename in reader.readlines():
+    #         filename = filename.rstrip().split('/')[-1]
+    #         filenames.append('../Dataset/COCOPose/images/train2017/' + filename)
 
-    dataset = Dataset(filenames, args.input_size, params, True)
+
+    image_dir = 'datasets/Triangle_215_Keypoint_YOLO/images/train'
+    # label_dir = 'datasets/Triangle_215_Keypoint_YOLO/labels/train'
+
+    # Load the dataset
+    filenames = [os.path.join(image_dir, f) for f in os.listdir(image_dir) if f.endswith(FORMATS)]
+    dataset = Dataset(filenames, args.input_size, params, augment=True)
 
     if args.world_size <= 1:
         sampler = None
@@ -76,9 +83,11 @@ def train(args, params):
     if args.world_size > 1:
         # DDP mode
         model = torch.nn.SyncBatchNorm.convert_sync_batchnorm(model)
-        model = torch.nn.parallel.DistributedDataParallel(module=model,
-                                                          device_ids=[args.local_rank],
-                                                          output_device=args.local_rank)
+        model = torch.nn.parallel.DistributedDataParallel(
+            module=model,
+            device_ids=[args.local_rank],
+            output_device=args.local_rank
+        )
 
     # start traning 
     best = 0

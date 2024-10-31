@@ -16,15 +16,19 @@ def pad(k, p=None, d=1):
         p = k // 2
     return p
 
-
+"""
+    inference use
+"""
 def fuse_conv(conv, norm):
-    fused_conv = torch.nn.Conv2d(conv.in_channels,
-                                 conv.out_channels,
-                                 kernel_size=conv.kernel_size,
-                                 stride=conv.stride,
-                                 padding=conv.padding,
-                                 groups=conv.groups,
-                                 bias=True).requires_grad_(False).to(conv.weight.device)
+    fused_conv = torch.nn.Conv2d(
+        conv.in_channels,
+        conv.out_channels,
+        kernel_size=conv.kernel_size,
+        stride=conv.stride,
+        padding=conv.padding,
+        groups=conv.groups,
+        bias=True
+).requires_grad_(False).to(conv.weight.device)
 
     w_conv = conv.weight.clone().view(conv.out_channels, -1)
     w_norm = torch.diag(norm.weight.div(torch.sqrt(norm.eps + norm.running_var)))
@@ -55,8 +59,10 @@ class Residual(torch.nn.Module):
     def __init__(self, ch, add=True):
         super().__init__()
         self.add_m = add
-        self.res_m = torch.nn.Sequential(Conv(ch, ch, 3),
-                                         Conv(ch, ch, 3))
+        self.res_m = torch.nn.Sequential(
+            Conv(ch, ch, 3), 
+            Conv(ch, ch, 3)
+        )
 
     def forward(self, x):
         return self.res_m(x) + x if self.add_m else self.res_m(x)
